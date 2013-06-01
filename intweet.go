@@ -7,6 +7,7 @@ import (
 	"github.com/garyburd/go-oauth/oauth"
 	"github.com/xiam/twitter"
 	"io/ioutil"
+	"net/url"
 	"time"
 )
 
@@ -40,6 +41,7 @@ type tweetCollection struct {
 	tweets []tweet
 	ids    map[string]tweet
 	chF    chan func()
+	Newest string
 }
 
 func newTweetCollection() *tweetCollection {
@@ -47,6 +49,7 @@ func newTweetCollection() *tweetCollection {
 		tweets: make([]tweet, 0),
 		ids:    make(map[string]tweet),
 		chF:    make(chan func()),
+		Newest: "",
 	}
 	go t.backend()
 	return t
@@ -70,6 +73,9 @@ func (t *tweetCollection) Add(tw tweet) {
 			}
 			t.tweets = append(t.tweets, tw)
 			t.ids[tw.Id] = tw
+			if tw.Id > t.Newest {
+				t.Newest = tw.Id
+			}
 		}
 	}
 }
@@ -96,7 +102,11 @@ var DISPLAY_INTERVAL = 5
 
 func poll(client *twitter.Client, tweets *tweetCollection) {
 	for {
-		results, _ := client.HomeTimeline(nil)
+		p := url.Values{}
+		if tweets.Newest != "" {
+			p.Set("since_id", tweets.Newest)
+		}
+		results, _ := client.HomeTimeline(p)
 		for _, v := range *results {
 			var u map[string]interface{}
 			u = v["user"].(map[string]interface{})
