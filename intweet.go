@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+var (
+	MAX_TWEETS       = 50
+	POLL_INTERVAL    = 60
+	DISPLAY_INTERVAL = 5
+)
+
 // a "class" for tweets
 type tweet struct {
 	Handle   string
@@ -34,8 +40,6 @@ func (t tweet) URL() string {
 // all the tweets that we know of.
 // maintain a slice of them ordered by date
 // and a map indexed by Id
-
-var MAX_TWEETS = 50
 
 type tweetCollection struct {
 	tweets []tweet
@@ -95,10 +99,9 @@ type ConfigData struct {
 	ConsumerSecret string
 	OauthToken     string
 	OauthSecret    string
+	MaxTweets      int
+	PollInterval   int
 }
-
-var POLL_INTERVAL = 60
-var DISPLAY_INTERVAL = 5
 
 func poll(client *twitter.Client, tweets *tweetCollection) {
 	for {
@@ -148,6 +151,9 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	MAX_TWEETS = f.MaxTweets
+	POLL_INTERVAL = f.PollInterval
 
 	client := twitter.New(&oauth.Credentials{
 		f.ConsumerKey,
