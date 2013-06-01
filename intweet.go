@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"github.com/garyburd/go-oauth/oauth"
 	"github.com/xiam/twitter"
+	"html/template"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -172,5 +175,43 @@ func main() {
 
 	tweets := newTweetCollection()
 	go poll(client, tweets)
-	display(tweets)
+	go display(tweets)
+	http.HandleFunc("/", makeHandler(indexHandler, tweets))
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
+
+func makeHandler(fn func(http.ResponseWriter, *http.Request, *tweetCollection),
+	tweets *tweetCollection) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fn(w, r, tweets)
+	}
+}
+
+type PageResponse struct {
+	Tweets []tweet
+}
+
+func indexHandler(w http.ResponseWriter, r *http.Request,
+	tweets *tweetCollection) {
+	pr := PageResponse{
+		Tweets: tweets.All(),
+	}
+	t, _ := template.New("index").Parse(index_view_template)
+	t.Execute(w, pr)
+}
+
+const index_view_template = `
+<html>
+<head>
+<title>Tweets</title>
+</head>
+<body>
+
+{{range .Tweets}}
+<h2>{{.FullName}} @{{.Handle}}</h2>
+<p>{{.Text}}</p>
+<small><a href="{{.URL}}">{{.Created}}</a></small>
+{{end}}
+</body>
+</html>
+`
