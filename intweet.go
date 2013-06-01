@@ -104,6 +104,7 @@ type ConfigData struct {
 	OauthSecret    string
 	MaxTweets      int
 	PollInterval   int
+	Port           string
 }
 
 func poll(client *twitter.Client, tweets *tweetCollection) {
@@ -167,7 +168,7 @@ func main() {
 	go poll(client, tweets)
 	http.HandleFunc("/atom.xml", makeHandler(atomHandler, tweets))
 	http.HandleFunc("/", makeHandler(indexHandler, tweets))
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	log.Fatal(http.ListenAndServe(f.Port, nil))
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, *tweetCollection),
