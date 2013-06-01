@@ -17,7 +17,6 @@ import (
 var (
 	MAX_TWEETS       = 50
 	POLL_INTERVAL    = 60
-	DISPLAY_INTERVAL = 5
 )
 
 // a "class" for tweets
@@ -129,16 +128,6 @@ func poll(client *twitter.Client, tweets *tweetCollection) {
 	}
 }
 
-func display(tweets *tweetCollection) {
-	for {
-		fmt.Println("----------------------")
-		for _, t := range tweets.All() {
-			fmt.Println(t.String())
-		}
-		time.Sleep(time.Duration(DISPLAY_INTERVAL) * time.Second)
-	}
-}
-
 func main() {
 	var configfile string
 	flag.StringVar(&configfile, "config", "./config.json", "JSON config file")
@@ -175,7 +164,6 @@ func main() {
 
 	tweets := newTweetCollection()
 	go poll(client, tweets)
-	go display(tweets)
 	http.HandleFunc("/", makeHandler(indexHandler, tweets))
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }
