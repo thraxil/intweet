@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/garyburd/go-oauth/oauth"
+	"github.com/gorilla/feeds"
 	"github.com/xiam/twitter"
 	"html/template"
 	"io/ioutil"
@@ -15,8 +16,8 @@ import (
 )
 
 var (
-	MAX_TWEETS       = 50
-	POLL_INTERVAL    = 60
+	MAX_TWEETS    = 50
+	POLL_INTERVAL = 60
 )
 
 // a "class" for tweets
@@ -164,6 +165,7 @@ func main() {
 
 	tweets := newTweetCollection()
 	go poll(client, tweets)
+	http.HandleFunc("/atom.xml", makeHandler(atomHandler, tweets))
 	http.HandleFunc("/", makeHandler(indexHandler, tweets))
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }
@@ -203,3 +205,35 @@ const index_view_template = `
 </body>
 </html>
 `
+
+func atomHandler(w http.ResponseWriter, r *http.Request,
+	tweets *tweetCollection) {
+
+	now := time.Now()
+	feed := &feeds.Feed{
+		Title:       "@thraxil twitter feed",
+		Link:        &feeds.Link{Href: "http://tweets.thraxil.org/"},
+		Description: "My Twitter Feed",
+		Author:      &feeds.Author{"Anders Pearson", "anders@columbia.edu"},
+		Created:     now,
+	}
+
+	feed.Items = []*feeds.Item{}
+	for _, t := range tweets.All() {
+		created, err := time.Parse("Mon Jan 2 15:04:05 -0700 2006", t.Created)
+		if err != nil {
+			created = now
+		}
+		feed.Items = append(feed.Items,
+			&feeds.Item{
+				Title:       t.FullName + " (@" + t.Handle + ") " + t.Created,
+				Link:        &feeds.Link{Href: t.URL()},
+				Description: t.Text,
+				Author:      &feeds.Author{t.FullName, "@" + t.Handle},
+				Created:     created,
+			})
+	}
+	atom, _ := feed.ToAtom()
+	w.Header().Set("Content-Type", "application/atom+xml")
+	fmt.Fprintf(w, atom)
+}
