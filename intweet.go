@@ -28,13 +28,6 @@ type tweet struct {
 	FullName string
 }
 
-func (t tweet) String() string {
-	return fmt.Sprintf("%s\t@%s\t%v",
-		t.Created,
-		t.Handle,
-		t.Text)
-}
-
 func (t tweet) URL() string {
 	return fmt.Sprintf("https://twitter.com/%s/status/%s", t.Handle, t.Id)
 }
@@ -96,16 +89,6 @@ func (t tweetCollection) All() []tweet {
 	return <-rch
 }
 
-type ConfigData struct {
-	ConsumerKey    string
-	ConsumerSecret string
-	OauthToken     string
-	OauthSecret    string
-	MaxTweets      int
-	PollInterval   int
-	Port           string
-}
-
 func poll(client *twitter.Client, tweets *tweetCollection) {
 	for {
 		p := url.Values{}
@@ -127,6 +110,16 @@ func poll(client *twitter.Client, tweets *tweetCollection) {
 		}
 		time.Sleep(time.Duration(POLL_INTERVAL) * time.Second)
 	}
+}
+
+type ConfigData struct {
+	ConsumerKey    string
+	ConsumerSecret string
+	OauthToken     string
+	OauthSecret    string
+	MaxTweets      int
+	PollInterval   int
+	Port           string
 }
 
 func main() {
