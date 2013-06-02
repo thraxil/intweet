@@ -80,3 +80,9 @@ bones HTML view of the most recent tweets in your timeline. That's
 mainly to verify that things are working right. The actual Atom feed
 is then at http://localhost:8000/atom.xml so that's what you would
 subscribe to.
+
+Note: I haven't gotten around to setting up the feed title,
+description, and URL stuff yet. They're just hard-coded in the app. If
+you care about those things, you should just change them in
+`intweet.go` and re-build. I'll move them to the config file soon
+though. (or, you know, pull requests welcome)
