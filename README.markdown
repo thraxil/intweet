@@ -84,3 +84,9 @@ bones HTML view of the most recent tweets in your timeline. That's
 mainly to verify that things are working right. The actual Atom feed
 is then at http://localhost:8000/atom.xml so that's what you would
 subscribe to.
+
+I've included a sample upstart config as well. If you're running
+Ubuntu, you can copy `upstart.conf` to `/etc/init/intweet.conf`, edit
+it to point to whereever you have the intweet binary and config files,
+change the user that it runs as, then run `sudo start intweet` and
+upstart will keep the process running for you.
