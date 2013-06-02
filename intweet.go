@@ -22,7 +22,7 @@ var (
 	FEED_DESCRIPTION  = ""
 	FEED_AUTHOR_EMAIL = ""
 	FEED_AUTHOR_NAME  = ""
-	LATEST_UPDATE = time.Now()
+	LATEST_UPDATE     = time.Now()
 )
 
 // a "class" for tweets
