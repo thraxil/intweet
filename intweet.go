@@ -22,6 +22,7 @@ var (
 	FEED_DESCRIPTION  = ""
 	FEED_AUTHOR_EMAIL = ""
 	FEED_AUTHOR_NAME  = ""
+	LATEST_UPDATE = time.Now()
 )
 
 // a "class" for tweets
@@ -77,6 +78,7 @@ func (t *tweetCollection) Add(tw tweet) {
 			}
 			t.tweets = append(t.tweets, tw)
 			t.ids[tw.Id] = tw
+			LATEST_UPDATE = time.Now()
 			if tw.Id > t.Newest {
 				t.Newest = tw.Id
 			}
@@ -210,20 +212,19 @@ const index_view_template = `
 func atomHandler(w http.ResponseWriter, r *http.Request,
 	tweets *tweetCollection) {
 
-	now := time.Now()
 	feed := &feeds.Feed{
 		Title:       FEED_TITLE,
 		Link:        &feeds.Link{Href: FEED_LINK},
 		Description: FEED_DESCRIPTION,
 		Author:      &feeds.Author{FEED_AUTHOR_NAME, FEED_AUTHOR_EMAIL},
-		Created:     now,
+		Created:     LATEST_UPDATE,
 	}
 
 	feed.Items = []*feeds.Item{}
 	for _, t := range tweets.All() {
 		created, err := time.Parse("Mon Jan 2 15:04:05 -0700 2006", t.Created)
 		if err != nil {
-			created = now
+			created = LATEST_UPDATE
 		}
 		feed.Items = append(feed.Items,
 			&feeds.Item{
