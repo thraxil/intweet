@@ -15,8 +15,13 @@ import (
 )
 
 var (
-	MAX_TWEETS    = 50
-	POLL_INTERVAL = 60
+	MAX_TWEETS        = 50
+	POLL_INTERVAL     = 60
+	FEED_TITLE        = ""
+	FEED_LINK         = ""
+	FEED_DESCRIPTION  = ""
+	FEED_AUTHOR_EMAIL = ""
+	FEED_AUTHOR_NAME  = ""
 )
 
 // a "class" for tweets
@@ -112,34 +117,37 @@ func poll(client *twitter.Client, tweets *tweetCollection) {
 	}
 }
 
-type ConfigData struct {
-	ConsumerKey    string
-	ConsumerSecret string
-	OauthToken     string
-	OauthSecret    string
-	MaxTweets      int
-	PollInterval   int
-	Port           string
-}
-
 func main() {
 	var configfile string
 	flag.StringVar(&configfile, "config", "./config.toml", "TOML config file")
 	flag.Parse()
 
 	var (
-		oauth_token     = config.String("oauth_token", "")
-		oauth_secret    = config.String("oauth_secret", "")
-		consumer_key    = config.String("consumer_key", "")
-		consumer_secret = config.String("consumer_secret", "")
-		max_tweets      = config.Int("max_tweets", 100)
-		poll_interval   = config.Int("poll_interval", 60)
-		port            = config.String("port", ":8000")
+		oauth_token       = config.String("oauth_token", "")
+		oauth_secret      = config.String("oauth_secret", "")
+		consumer_key      = config.String("consumer_key", "")
+		consumer_secret   = config.String("consumer_secret", "")
+		max_tweets        = config.Int("max_tweets", 100)
+		poll_interval     = config.Int("poll_interval", 60)
+		port              = config.String("port", ":8000")
+		feed_title        = config.String("feed_title", "tweets")
+		feed_link         = config.String("feed_link", "http://localhost:8000/")
+		feed_description  = config.String("feed_description", "twitter to atom gateway")
+		feed_author_name  = config.String("feed_author_name", "your name here")
+		feed_author_email = config.String("feed_author_email", "you@example.com")
 	)
-	config.Parse(configfile)
+	err := config.Parse(configfile)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
 	MAX_TWEETS = *max_tweets
 	POLL_INTERVAL = *poll_interval
+	FEED_TITLE = *feed_title
+	FEED_LINK = *feed_link
+	FEED_DESCRIPTION = *feed_description
+	FEED_AUTHOR_NAME = *feed_author_name
+	FEED_AUTHOR_EMAIL = *feed_author_email
 
 	client := twitter.New(&oauth.Credentials{
 		*consumer_key,
@@ -151,7 +159,7 @@ func main() {
 		*oauth_secret,
 	})
 
-	_, err := client.VerifyCredentials(nil)
+	_, err = client.VerifyCredentials(nil)
 	if err != nil {
 		panic("error: " + err.Error())
 	}
@@ -204,10 +212,10 @@ func atomHandler(w http.ResponseWriter, r *http.Request,
 
 	now := time.Now()
 	feed := &feeds.Feed{
-		Title:       "@thraxil twitter feed",
-		Link:        &feeds.Link{Href: "http://tweets.thraxil.org/"},
-		Description: "My Twitter Feed",
-		Author:      &feeds.Author{"Anders Pearson", "anders@columbia.edu"},
+		Title:       FEED_TITLE,
+		Link:        &feeds.Link{Href: FEED_LINK},
+		Description: FEED_DESCRIPTION,
+		Author:      &feeds.Author{FEED_AUTHOR_NAME, FEED_AUTHOR_EMAIL},
 		Created:     now,
 	}
 
