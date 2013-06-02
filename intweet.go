@@ -1,14 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/garyburd/go-oauth/oauth"
 	"github.com/gorilla/feeds"
+	"github.com/stvp/go-toml-config"
 	"github.com/xiam/twitter"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -132,34 +131,34 @@ func poll(client *twitter.Client, tweets *tweetCollection) {
 
 func main() {
 	var configfile string
-	flag.StringVar(&configfile, "config", "./config.json", "JSON config file")
+	flag.StringVar(&configfile, "config", "./config.toml", "TOML config file")
 	flag.Parse()
 
-	file, err := ioutil.ReadFile(configfile)
-	if err != nil {
-		panic(err.Error())
-	}
+	var (
+		oauth_token     = config.String("oauth_token", "")
+		oauth_secret    = config.String("oauth_secret", "")
+		consumer_key    = config.String("consumer_key", "")
+		consumer_secret = config.String("consumer_secret", "")
+		max_tweets      = config.Int("max_tweets", 100)
+		poll_interval   = config.Int("poll_interval", 60)
+		port            = config.String("port", ":8000")
+	)
+	config.Parse(configfile)
 
-	f := ConfigData{}
-	err = json.Unmarshal(file, &f)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	MAX_TWEETS = f.MaxTweets
-	POLL_INTERVAL = f.PollInterval
+	MAX_TWEETS = *max_tweets
+	POLL_INTERVAL = *poll_interval
 
 	client := twitter.New(&oauth.Credentials{
-		f.ConsumerKey,
-		f.ConsumerSecret,
+		*consumer_key,
+		*consumer_secret,
 	})
 
 	client.SetAuth(&oauth.Credentials{
-		f.OauthToken,
-		f.OauthSecret,
+		*oauth_token,
+		*oauth_secret,
 	})
 
-	_, err = client.VerifyCredentials(nil)
+	_, err := client.VerifyCredentials(nil)
 	if err != nil {
 		panic("error: " + err.Error())
 	}
@@ -168,7 +167,7 @@ func main() {
 	go poll(client, tweets)
 	http.HandleFunc("/atom.xml", makeHandler(atomHandler, tweets))
 	http.HandleFunc("/", makeHandler(indexHandler, tweets))
-	log.Fatal(http.ListenAndServe(f.Port, nil))
+	log.Fatal(http.ListenAndServe(*port, nil))
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, *tweetCollection),
