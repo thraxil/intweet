@@ -38,11 +38,8 @@ Pull down the code and build:
 
     $ git clone https://github.com/thraxil/intweet.git
     $ cd intweet
-    $ go get github.com/garyburd/go-oauth/oauth
-    $ go get github.com/gorilla/feeds
-    $ go get github.com/stvp/go-toml-config
-    $ go get github.com/xiam/twitter
-    $ go build intweet.go
+    $ make install_deps
+    $ make
 
 Then you need to get a set of API keys and tokens from
 Twitter. Register at: https://dev.twitter.com/apps and create an
