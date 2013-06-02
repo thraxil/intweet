@@ -59,13 +59,20 @@ like:
     max_tweets = 100
     poll_interval = 300
     port = ":8000"
+    feed_title = "my awesome twitter feed"
+    feed_link = "http://tweets.example.com/"
+    feed_description = "My Twitter Feed"
+    feed_author_name = "Your Name"
+    feed_author_email = "you@example.com"
+
 
 `max_tweets` is the number of tweets to keep around. If you follow a
 lot of people and they tweet a lot and your reader doesn't fetch feeds
 very often, you may want this higher. `poll_interval` is how often it
 asks Twitter for new feeds. Don't set this too low or you'll get shut
 down by Twitter for hitting their API too often. `port` is the port
-that the server will run on. Yes, the ":" should be in there.
+that the server will run on. Yes, the ":" should be in there. The
+other fields are just for the feed metadata.
 
 Then you can run it with:
 
@@ -80,9 +87,3 @@ bones HTML view of the most recent tweets in your timeline. That's
 mainly to verify that things are working right. The actual Atom feed
 is then at http://localhost:8000/atom.xml so that's what you would
 subscribe to.
-
-Note: I haven't gotten around to setting up the feed title,
-description, and URL stuff yet. They're just hard-coded in the app. If
-you care about those things, you should just change them in
-`intweet.go` and re-build. I'll move them to the config file soon
-though. (or, you know, pull requests welcome)
