@@ -22,7 +22,6 @@ var (
 	FEED_DESCRIPTION  = ""
 	FEED_AUTHOR_EMAIL = ""
 	FEED_AUTHOR_NAME  = ""
-	LATEST_UPDATE     = time.Now()
 )
 
 // a "class" for tweets
@@ -46,7 +45,8 @@ type tweetCollection struct {
 	tweets []tweet
 	ids    map[string]tweet
 	chF    chan func()
-	Newest string
+	newest string    // id of the newest tweet we've see
+	latest time.Time // timestamp for the last change made
 }
 
 func newTweetCollection() *tweetCollection {
@@ -54,12 +54,16 @@ func newTweetCollection() *tweetCollection {
 		tweets: make([]tweet, 0),
 		ids:    make(map[string]tweet),
 		chF:    make(chan func()),
-		Newest: "",
+		newest: "",
+		latest: time.Now(),
 	}
 	go t.backend()
 	return t
 }
 
+// all access to the collection's internal data structures
+// (the list and map) get serialized through this
+// channel backend for safe concurrency.
 func (t *tweetCollection) backend() {
 	for f := range t.chF {
 		f()
@@ -78,15 +82,15 @@ func (t *tweetCollection) Add(tw tweet) {
 			}
 			t.tweets = append(t.tweets, tw)
 			t.ids[tw.Id] = tw
-			LATEST_UPDATE = time.Now()
-			if tw.Id > t.Newest {
-				t.Newest = tw.Id
+			t.latest = time.Now()
+			if tw.Id > t.newest {
+				t.newest = tw.Id
 			}
 		}
 	}
 }
 
-func (t tweetCollection) All() []tweet {
+func (t *tweetCollection) All() []tweet {
 	rch := make(chan []tweet)
 	go func() {
 		t.chF <- func() {
@@ -96,11 +100,32 @@ func (t tweetCollection) All() []tweet {
 	return <-rch
 }
 
+func (t *tweetCollection) GetNewest() string {
+	rch := make(chan string)
+	go func() {
+		t.chF <- func() {
+			rch <- t.newest
+		}
+	}()
+	return <-rch
+}
+
+func (t *tweetCollection) GetLatest() time.Time {
+	rch := make(chan time.Time)
+	go func() {
+		t.chF <- func() {
+			rch <- t.latest
+		}
+	}()
+	return <-rch
+}
+
 func poll(client *twitter.Client, tweets *tweetCollection) {
 	for {
 		p := url.Values{}
-		if tweets.Newest != "" {
-			p.Set("since_id", tweets.Newest)
+		newest := tweets.GetNewest()
+		if newest != "" {
+			p.Set("since_id", newest)
 		}
 		results, _ := client.HomeTimeline(p)
 		for _, v := range *results {
@@ -211,20 +236,22 @@ const index_view_template = `
 
 func atomHandler(w http.ResponseWriter, r *http.Request,
 	tweets *tweetCollection) {
+	latest := tweets.GetLatest()
 
 	feed := &feeds.Feed{
 		Title:       FEED_TITLE,
 		Link:        &feeds.Link{Href: FEED_LINK},
 		Description: FEED_DESCRIPTION,
 		Author:      &feeds.Author{FEED_AUTHOR_NAME, FEED_AUTHOR_EMAIL},
-		Created:     LATEST_UPDATE,
+		Created:     latest,
 	}
 
 	feed.Items = []*feeds.Item{}
-	for _, t := range tweets.All() {
+	all_tweets := tweets.All()
+	for _, t := range all_tweets {
 		created, err := time.Parse("Mon Jan 2 15:04:05 -0700 2006", t.Created)
 		if err != nil {
-			created = LATEST_UPDATE
+			created = latest
 		}
 		feed.Items = append(feed.Items,
 			&feeds.Item{
