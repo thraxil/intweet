@@ -90,3 +90,11 @@ Ubuntu, you can copy `upstart.conf` to `/etc/init/intweet.conf`, edit
 it to point to whereever you have the intweet binary and config files,
 change the user that it runs as, then run `sudo start intweet` and
 upstart will keep the process running for you.
+
+There's also a Docker container that's easy to run (if you use
+Docker). Make your config.toml as described above and run like so:
+
+   docker run \
+       -p 8890:8890 \
+       -v /path/to/config.toml:/intweet/config.toml \
+       thraxil/intweet
