@@ -1,17 +1,19 @@
 package main
 
 import (
+	_ "expvar"
 	"flag"
 	"fmt"
-	"github.com/garyburd/go-oauth/oauth"
-	"github.com/gorilla/feeds"
-	"github.com/stvp/go-toml-config"
-	"github.com/xiam/twitter"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/garyburd/go-oauth/oauth"
+	"github.com/gorilla/feeds"
+	config "github.com/stvp/go-toml-config"
+	"github.com/xiam/twitter"
 )
 
 var (
