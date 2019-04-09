@@ -27,11 +27,10 @@ var (
 
 // a "class" for tweets
 type tweet struct {
-	Handle   string
-	Text     string
-	Created  string
-	Id       string
-	FullName string
+	Handle  string
+	Text    string
+	Created string
+	Id      string
 }
 
 func (t tweet) URL() string {
@@ -127,11 +126,10 @@ func poll(client *anaconda.TwitterApi, tweets *tweetCollection) {
 		results, _ := client.GetHomeTimeline(p)
 		for _, v := range results {
 			t := tweet{
-				v.User.Name,
+				v.User.ScreenName,
 				v.FullText,
 				v.CreatedAt,
 				v.IdStr,
-				v.User.ScreenName,
 			}
 			tweets.Add(t)
 		}
@@ -209,7 +207,7 @@ const index_view_template = `
 <body>
 
 {{range .Tweets}}
-<h2>{{.FullName}} @{{.Handle}}</h2>
+<h2>@{{.Handle}}</h2>
 <p>{{.Text}}</p>
 <small><a href="{{.URL}}">{{.Created}}</a></small>
 {{end}}
@@ -238,10 +236,10 @@ func atomHandler(w http.ResponseWriter, r *http.Request,
 		}
 		feed.Items = append(feed.Items,
 			&feeds.Item{
-				Title:       t.FullName + " (@" + t.Handle + ") " + t.Created,
+				Title:       "@" + t.Handle + " " + t.Created,
 				Link:        &feeds.Link{Href: t.URL()},
 				Description: t.Text,
-				Author:      &feeds.Author{t.FullName, "@" + t.Handle},
+				Author:      &feeds.Author{t.Handle, "@" + t.Handle},
 				Created:     created,
 			})
 	}
