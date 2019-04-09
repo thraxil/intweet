@@ -10,10 +10,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/garyburd/go-oauth/oauth"
+	"github.com/ChimeraCoder/anaconda"
 	"github.com/gorilla/feeds"
 	config "github.com/stvp/go-toml-config"
-	"github.com/xiam/twitter"
 )
 
 var (
@@ -122,23 +121,17 @@ func (t *tweetCollection) GetLatest() time.Time {
 	return <-rch
 }
 
-func poll(client *twitter.Client, tweets *tweetCollection) {
+func poll(client *anaconda.TwitterApi, tweets *tweetCollection) {
 	for {
 		p := url.Values{}
-		newest := tweets.GetNewest()
-		if newest != "" {
-			p.Set("since_id", newest)
-		}
-		results, _ := client.HomeTimeline(p)
-		for _, v := range *results {
-			var u map[string]interface{}
-			u = v["user"].(map[string]interface{})
+		results, _ := client.GetHomeTimeline(p)
+		for _, v := range results {
 			t := tweet{
-				u["screen_name"].(string),
-				v["text"].(string),
-				v["created_at"].(string),
-				v["id_str"].(string),
-				u["name"].(string),
+				v.User.Name,
+				v.FullText,
+				v.CreatedAt,
+				v.IdStr,
+				v.User.ScreenName,
 			}
 			tweets.Add(t)
 		}
@@ -178,20 +171,8 @@ func main() {
 	FEED_AUTHOR_NAME = *feed_author_name
 	FEED_AUTHOR_EMAIL = *feed_author_email
 
-	client := twitter.New(&oauth.Credentials{
-		*consumer_key,
-		*consumer_secret,
-	})
-
-	client.SetAuth(&oauth.Credentials{
-		*oauth_token,
-		*oauth_secret,
-	})
-
-	_, err = client.VerifyCredentials(nil)
-	if err != nil {
-		panic("error: " + err.Error())
-	}
+	client := anaconda.NewTwitterApiWithCredentials(
+		*oauth_token, *oauth_secret, *consumer_key, *consumer_secret)
 
 	tweets := newTweetCollection()
 	go poll(client, tweets)
