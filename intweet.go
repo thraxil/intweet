@@ -2,17 +2,17 @@ package main // import "github.org/thraxil/intweet"
 
 import (
 	_ "expvar"
-	"flag"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/gorilla/feeds"
-	config "github.com/stvp/go-toml-config"
 )
 
 var (
@@ -137,46 +137,41 @@ func poll(client *anaconda.TwitterApi, tweets *tweetCollection) {
 	}
 }
 
-func main() {
-	var configfile string
-	flag.StringVar(&configfile, "config", "./config.toml", "TOML config file")
-	flag.Parse()
-
-	var (
-		oauth_token       = config.String("oauth_token", "")
-		oauth_secret      = config.String("oauth_secret", "")
-		consumer_key      = config.String("consumer_key", "")
-		consumer_secret   = config.String("consumer_secret", "")
-		max_tweets        = config.Int("max_tweets", 100)
-		poll_interval     = config.Int("poll_interval", 60)
-		port              = config.String("port", ":8000")
-		feed_title        = config.String("feed_title", "tweets")
-		feed_link         = config.String("feed_link", "http://localhost:8000/")
-		feed_description  = config.String("feed_description", "twitter to atom gateway")
-		feed_author_name  = config.String("feed_author_name", "your name here")
-		feed_author_email = config.String("feed_author_email", "you@example.com")
-	)
-	err := config.Parse(configfile)
-	if err != nil {
-		fmt.Println(err.Error())
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
 	}
+	return fallback
+}
 
-	MAX_TWEETS = *max_tweets
-	POLL_INTERVAL = *poll_interval
-	FEED_TITLE = *feed_title
-	FEED_LINK = *feed_link
-	FEED_DESCRIPTION = *feed_description
-	FEED_AUTHOR_NAME = *feed_author_name
-	FEED_AUTHOR_EMAIL = *feed_author_email
+func main() {
+	oauth_token := os.Getenv("INTWEET_OAUTH_TOKEN")
+	oauth_secret := os.Getenv("INTWEET_OAUTH_SECRET")
+	consumer_key := os.Getenv("INTWEET_CONSUMER_KEY")
+	consumer_secret := os.Getenv("INTWEET_CONSUMER_SECRET")
+	max_tweets, err := strconv.Atoi(getEnv("INTWEET_MAX_TWEETS", "100"))
+	if err == nil {
+		MAX_TWEETS = max_tweets
+	}
+	poll_interval, err := strconv.Atoi(getEnv("INTWEET_POLL_INTERVAL", "60"))
+	if err == nil {
+		POLL_INTERVAL = poll_interval
+	}
+	port := getEnv("INTWEET_PORT", ":8000")
+	FEED_TITLE = getEnv("INTWEET_FEED_TITLE", "tweets")
+	FEED_LINK = getEnv("INTWEET_FEED_LINK", "http://localhost:8000/")
+	FEED_DESCRIPTION = getEnv("INTWEET_DESCRIPTION", "twitter to atom gateway")
+	FEED_AUTHOR_NAME = getEnv("INTWEET_FEED_AUTHOR_NAME", "your name here")
+	FEED_AUTHOR_EMAIL = getEnv("INTWEET_FEED_AUTHOR_EMAIL", "you@example.com")
 
 	client := anaconda.NewTwitterApiWithCredentials(
-		*oauth_token, *oauth_secret, *consumer_key, *consumer_secret)
+		oauth_token, oauth_secret, consumer_key, consumer_secret)
 
 	tweets := newTweetCollection()
 	go poll(client, tweets)
 	http.HandleFunc("/atom.xml", makeHandler(atomHandler, tweets))
 	http.HandleFunc("/", makeHandler(indexHandler, tweets))
-	log.Fatal(http.ListenAndServe(*port, nil))
+	log.Fatal(http.ListenAndServe(port, nil))
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, *tweetCollection),
@@ -207,7 +202,7 @@ const index_view_template = `
 <body>
 
 {{range .Tweets}}
-<h2>@{{.Handle}}</h2>
+>@{{.Handle}}</h2>
 <p>{{.Text}}</p>
 <small><a href="{{.URL}}">{{.Created}}</a></small>
 {{end}}
