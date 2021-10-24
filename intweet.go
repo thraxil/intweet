@@ -171,6 +171,7 @@ func main() {
 	go poll(client, tweets)
 	http.HandleFunc("/atom.xml", makeHandler(atomHandler, tweets))
 	http.HandleFunc("/", makeHandler(indexHandler, tweets))
+	http.HandleFunc("/healthz/", makeHandler(healthzHandler, tweets))
 	log.Fatal(http.ListenAndServe(port, nil))
 }
 
@@ -179,6 +180,10 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, *tweetCollection),
 	return func(w http.ResponseWriter, r *http.Request) {
 		fn(w, r, tweets)
 	}
+}
+
+func healthzHandler(w http.ResponseWriter, _ *http.Request, _ *tweetCollection) {
+	w.WriteHeader(http.StatusOK)
 }
 
 type PageResponse struct {
