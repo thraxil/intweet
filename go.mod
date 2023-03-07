@@ -10,5 +10,6 @@ require (
 	github.com/dustin/gojson v0.0.0-20160307161227-2e71ec9dd5ad // indirect
 	github.com/garyburd/go-oauth v0.0.0-20180319155456-bca2e7f09a17 // indirect
 	github.com/gorilla/feeds v1.1.1
-	golang.org/x/net v0.0.0-20211020060615-d418f374d309 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
+	golang.org/x/net v0.7.0 // indirect
 )
